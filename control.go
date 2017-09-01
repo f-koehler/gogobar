@@ -26,5 +26,5 @@ func EndStatus() {
 	buffer.WriteString("],")
 	fmt.Println(buffer.String())
 	buffer.Reset()
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(refresh_interval * time.Millisecond)
 }

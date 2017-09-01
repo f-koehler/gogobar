@@ -7,15 +7,15 @@ import (
 )
 
 type Cpu struct {
-	idle    uint64
-	cpuTime uint64
-	graph   *Graph
+	idle  uint64
+	total uint64
+	graph *Graph
 }
 
 func NewCpu() *Cpu {
 	cpu := new(Cpu)
 	cpu.graph = NewGraph(10)
-	cpu.idle, cpu.cpuTime = cpu.ReadData()
+	cpu.idle, cpu.total = cpu.ReadData()
 	return cpu
 }
 
@@ -33,29 +33,32 @@ func (cpu *Cpu) ReadData() (uint64, uint64) {
 	steal, _ := strconv.ParseUint(fields[7], 10, 64)
 	guest, _ := strconv.ParseUint(fields[8], 10, 64)
 	guestNice, _ := strconv.ParseUint(fields[9], 10, 64)
-	cpuTime := user + nice + system + idle + iowait + irq + softirq + steal + guest + guestNice
+	total := user + nice + system + idle + iowait + irq + softirq + steal + guest + guestNice
 
-	return idle, cpuTime
+	return idle, total
 }
 
 func (cpu *Cpu) Call() {
 
-	idle, cpuTime := cpu.ReadData()
+	idle, total := cpu.ReadData()
 
 	idleDiff := idle - cpu.idle
-	cpuTimeDiff := cpuTime - cpu.cpuTime
+	totalDiff := total - cpu.total
 
-	if cpuTimeDiff == 0 {
+	if totalDiff == 0 {
 		buffer.WriteString("{\"full_text\": \"CPU:\"}")
 		return
 	}
 
-	usage := float64(idleDiff) / float64(cpuTimeDiff)
+	usage := float64(idleDiff) / float64(totalDiff)
+	cpu.graph.AddValue(usage)
 
 	buffer.WriteString("{\"full_text\": \"CPU: ")
 	buffer.WriteString(strconv.FormatFloat(usage*100, 'f', 1, 64))
-	buffer.WriteString("%\"}")
+	buffer.WriteString("% ")
+	cpu.graph.Call()
+	buffer.WriteString("\"}")
 
 	cpu.idle = idle
-	cpu.cpuTime = cpuTime
+	cpu.total = total
 }

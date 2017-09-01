@@ -1,5 +1,7 @@
 package main
 
+const refresh_interval = 200
+
 func main() {
 	Init()
 
