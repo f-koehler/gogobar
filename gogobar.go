@@ -1,6 +1,6 @@
 package main
 
-const refresh_interval = 500
+const refresh_interval = 1000
 
 func main() {
 	Init()
