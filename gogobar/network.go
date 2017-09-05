@@ -1,4 +1,4 @@
-package main
+package gogobar
 
 import (
 	"io/ioutil"
@@ -11,12 +11,12 @@ type NetworkInterface struct {
 	lastTime      time.Time
 	lastRxBytes   uint64
 	lastTxBytes   uint64
+	graphRx       *Graph
+	graphTx       *Graph
 	maxRxSpeed    uint64
 	maxTxSpeed    uint64
-	maxRxSpeedStr string
-	maxTxSpeedStr string
-	graph_rx      *Graph
-	graph_tx      *Graph
+	maxRxSpeedLen int
+	maxTxSpeedLen int
 }
 
 func NewNetworkInterface(name string) *NetworkInterface {
@@ -26,12 +26,12 @@ func NewNetworkInterface(name string) *NetworkInterface {
 	net.lastTime = time.Now()
 	net.lastRxBytes = net.GetRxBytes()
 	net.lastTxBytes = net.GetTxBytes()
+	net.graphRx = NewGraph(10)
+	net.graphTx = NewGraph(10)
 	net.maxRxSpeed = 0
 	net.maxTxSpeed = 0
-	net.maxRxSpeedStr = "0"
-	net.maxTxSpeedStr = "0"
-	net.graph_rx = NewGraph(10)
-	net.graph_tx = NewGraph(10)
+	net.maxRxSpeedLen = 0
+	net.maxTxSpeedLen = 0
 
 	return net
 }
@@ -58,38 +58,38 @@ func (net *NetworkInterface) Call() {
 	rxSpeed := uint64(float64(rxBytes-net.lastRxBytes) / (elapsedTime * 1024.))
 	txSpeed := uint64(float64(txBytes-net.lastTxBytes) / (elapsedTime * 1024.))
 
+	rxSpeedStr := strconv.FormatUint(rxSpeed, 10)
+	txSpeedStr := strconv.FormatUint(txSpeed, 10)
+
 	net.lastRxBytes = rxBytes
 	net.lastTxBytes = txBytes
 	net.lastTime = currentTime
 
-	rxSpeedStr := strconv.FormatUint(rxSpeed, 10)
-	txSpeedStr := strconv.FormatUint(txSpeed, 10)
-
 	if rxSpeed > net.maxRxSpeed {
 		net.maxRxSpeed = rxSpeed
-		net.maxRxSpeedStr = rxSpeedStr
-		net.graph_rx.max = float64(rxSpeed)
+		net.maxRxSpeedLen = len(rxSpeedStr)
+		net.graphRx.max = float64(rxSpeed)
 	}
 
 	if txSpeed > net.maxTxSpeed {
 		net.maxTxSpeed = txSpeed
-		net.maxTxSpeedStr = txSpeedStr
-		net.graph_tx.max = float64(txSpeed)
+		net.maxTxSpeedLen = len(txSpeedStr)
+		net.graphTx.max = float64(txSpeed)
 	}
 
-	net.graph_rx.AddValue(float64(rxSpeed))
-	net.graph_tx.AddValue(float64(txSpeed))
+	net.graphRx.AddValue(float64(rxSpeed))
+	net.graphTx.AddValue(float64(txSpeed))
 
 	buffer.WriteString("{\"full_text\": \"")
 	buffer.WriteString(net.name)
 	buffer.WriteString(": ")
 	buffer.WriteRune('↧')
-	FillAndWrite(rxSpeedStr, len(net.maxRxSpeedStr), true)
+	buffer.WriteString(PadLeft(rxSpeedStr, ' ', net.maxRxSpeedLen))
 	buffer.WriteString("kB/s ")
-	net.graph_rx.Call()
+	net.graphRx.Call()
 	buffer.WriteString("    ↥")
-	FillAndWrite(txSpeedStr, len(net.maxTxSpeedStr), true)
+	buffer.WriteString(PadLeft(txSpeedStr, ' ', net.maxTxSpeedLen))
 	buffer.WriteString("kB/s ")
-	net.graph_tx.Call()
+	net.graphTx.Call()
 	buffer.WriteString("\"}")
 }

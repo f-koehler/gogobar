@@ -1,4 +1,4 @@
-package main
+package gogobar
 
 import (
 	"bytes"
@@ -7,8 +7,10 @@ import (
 )
 
 var buffer = bytes.NewBufferString("")
+var refresh_interval time.Duration
 
-func Init() {
+func Init(interval int) {
+	refresh_interval = time.Duration(interval)
 	fmt.Println("{ \"version\": 1}")
 	fmt.Println("[")
 }

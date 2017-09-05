@@ -1,4 +1,4 @@
-package main
+package gogobar
 
 import (
 	"io/ioutil"
@@ -7,11 +7,11 @@ import (
 )
 
 type Cpu struct {
-	idle       uint64
-	total      uint64
-	last_idle  uint64
-	last_total uint64
-	graph      *Graph
+	idle      uint64
+	total     uint64
+	lastIdle  uint64
+	lastTotal uint64
+	graph     *Graph
 }
 
 func NewCpu() *Cpu {
@@ -25,8 +25,8 @@ func (cpu *Cpu) ReadData() {
 	data, _ := ioutil.ReadFile("/proc/stat")
 	fields := strings.Fields(strings.Split(string(data), "\n")[0])
 
-	cpu.last_idle = cpu.idle
-	cpu.last_total = cpu.total
+	cpu.lastIdle = cpu.idle
+	cpu.lastTotal = cpu.total
 
 	cpu.idle, _ = strconv.ParseUint(fields[4], 10, 64)
 	cpu.total = 0
@@ -40,8 +40,8 @@ func (cpu *Cpu) ReadData() {
 func (cpu *Cpu) Call() {
 
 	cpu.ReadData()
-	idleDiff := cpu.idle - cpu.last_idle
-	totalDiff := cpu.total - cpu.last_total
+	idleDiff := cpu.idle - cpu.lastIdle
+	totalDiff := cpu.total - cpu.lastTotal
 
 	if totalDiff == 0 {
 		buffer.WriteString("{\"full_text\": \"CPU:\"}")
@@ -52,7 +52,7 @@ func (cpu *Cpu) Call() {
 	cpu.graph.AddValue(usage)
 
 	buffer.WriteString("{\"full_text\": \"CPU: ")
-	buffer.WriteString(strconv.FormatFloat(usage*100, 'f', 1, 64))
+	buffer.WriteString(PadLeft(strconv.FormatFloat(usage*100, 'f', 1, 64), ' ', 5))
 	buffer.WriteString("% ")
 	cpu.graph.Call()
 	buffer.WriteString("\"}")

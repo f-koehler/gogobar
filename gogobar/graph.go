@@ -1,4 +1,4 @@
-package main
+package gogobar
 
 type Graph struct {
 	min    float64
