@@ -52,8 +52,17 @@ func (cpu *Cpu) Call() {
 	cpu.graph.AddValue(usage)
 
 	buffer.WriteString("{\"full_text\": \"CPU: ")
-	buffer.WriteString(PadLeft(strconv.FormatFloat(usage*100, 'f', 1, 64), ' ', 5))
-	buffer.WriteString("% ")
+	buffer.WriteString(PadRight(strconv.FormatFloat(usage*100, 'f', 1, 64)+"%", ' ', 6))
 	cpu.graph.Call()
+	buffer.WriteString("\", \"color\": \"")
+	if usage > 0.75 {
+		buffer.WriteString(colorCritical)
+	} else if usage > 0.5 {
+		buffer.WriteString(colorBad)
+	} else if usage > 0.25 {
+		buffer.WriteString(colorGood)
+	} else {
+		buffer.WriteString(colorNeutral)
+	}
 	buffer.WriteString("\"}")
 }

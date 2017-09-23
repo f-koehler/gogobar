@@ -52,21 +52,20 @@ func (mem *Memory) Call() {
 		}
 	}
 
-	memUsage := 1. - float64(available)/float64(total)
-	mem.graph.AddValue(memUsage)
+	usage := 1. - float64(available)/float64(total)
+	mem.graph.AddValue(usage)
 
 	usedStr := strconv.FormatFloat(float64(total-available)/kB2GB, 'f', 1, 64)
 	totalStr := strconv.FormatFloat(float64(total)/kB2GB, 'f', 1, 64)
-	usageStr := strconv.FormatFloat(memUsage*100., 'f', 2, 64)
+	usageStr := strconv.FormatFloat(usage*100., 'f', 2, 64)
 
 	buffer.WriteString("{\"full_text\": \"")
 	buffer.WriteString("MEM: ")
 	buffer.WriteString(PadLeft(usedStr, ' ', len(totalStr)))
 	buffer.WriteRune('/')
 	buffer.WriteString(totalStr)
-	buffer.WriteString("GB (")
-	buffer.WriteString(PadLeft(usageStr, ' ', 6))
-	buffer.WriteString("%) ")
+	buffer.WriteString("GB ")
+	buffer.WriteString(PadRight("("+usageStr+"%)", ' ', 9))
 	mem.graph.Call()
 
 	if swapTotal > 0 {
@@ -80,8 +79,18 @@ func (mem *Memory) Call() {
 		buffer.WriteString(totalStr)
 		buffer.WriteString("GB (")
 		buffer.WriteString(PadLeft(usageStr, ' ', 6))
-		buffer.WriteString("%) \"}")
-	} else {
-		buffer.WriteString(" \"}")
+		buffer.WriteString("%)")
 	}
+
+	buffer.WriteString("\", \"color\": \"")
+	if usage > 0.75 {
+		buffer.WriteString(colorCritical)
+	} else if usage > 0.5 {
+		buffer.WriteString(colorBad)
+	} else if usage > 0.25 {
+		buffer.WriteString(colorGood)
+	} else {
+		buffer.WriteString(colorNeutral)
+	}
+	buffer.WriteString("\"}")
 }

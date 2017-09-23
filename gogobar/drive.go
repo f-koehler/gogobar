@@ -20,19 +20,30 @@ func (drive *Drive) Call() {
 	var stat syscall.Statfs_t
 	syscall.Statfs(drive.path, &stat)
 	total := float64(stat.Blocks*uint64(stat.Bsize)) / BtoGB
-	used := float64((stat.Blocks-stat.Bfree)*uint64(stat.Bsize)) / BtoGB
+	usage := float64((stat.Blocks-stat.Bfree)*uint64(stat.Bsize)) / BtoGB
 	totalStr := strconv.FormatFloat(total, 'f', 1, 64)
-	usedStr := strconv.FormatFloat(used, 'f', 1, 64)
-	ratio := used / total * 100.
+	usageStr := strconv.FormatFloat(usage, 'f', 1, 64)
+	ratio := usage / total * 100.
 
 	buffer.WriteString("{\"full_text\": \"")
 	buffer.WriteString(drive.name)
 	buffer.WriteString(": ")
-	buffer.WriteString(usedStr)
+	buffer.WriteString(usageStr)
 	buffer.WriteRune('/')
 	buffer.WriteString(totalStr)
 	buffer.WriteString("GB (")
 	buffer.WriteString(strconv.FormatFloat(ratio, 'f', 2, 64))
 	buffer.WriteString("%)")
+
+	buffer.WriteString("\", \"color\": \"")
+	if usage > 0.75 {
+		buffer.WriteString(colorCritical)
+	} else if usage > 0.5 {
+		buffer.WriteString(colorBad)
+	} else if usage > 0.25 {
+		buffer.WriteString(colorGood)
+	} else {
+		buffer.WriteString(colorNeutral)
+	}
 	buffer.WriteString("\"}")
 }

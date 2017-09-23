@@ -2,6 +2,7 @@ package gogobar
 
 import (
 	"io/ioutil"
+	"math"
 	"strconv"
 	"time"
 )
@@ -77,19 +78,31 @@ func (net *NetworkInterface) Call() {
 		net.graphTx.max = float64(txSpeed)
 	}
 
+	usage := math.Max(float64(rxSpeed)/float64(net.maxRxSpeed), float64(txSpeed)/float64(net.maxTxSpeed))
+
 	net.graphRx.AddValue(float64(rxSpeed))
 	net.graphTx.AddValue(float64(txSpeed))
 
 	buffer.WriteString("{\"full_text\": \"")
 	buffer.WriteString(net.name)
 	buffer.WriteString(": ")
-	buffer.WriteRune('↧')
-	buffer.WriteString(PadLeft(rxSpeedStr, ' ', net.maxRxSpeedLen))
-	buffer.WriteString("kB/s ")
+	buffer.WriteString(PadLeft("↧"+rxSpeedStr+"kB/s", ' ', net.maxRxSpeedLen+5))
+	buffer.WriteRune(' ')
 	net.graphRx.Call()
-	buffer.WriteString("    ↥")
-	buffer.WriteString(PadLeft(txSpeedStr, ' ', net.maxTxSpeedLen))
-	buffer.WriteString("kB/s ")
+	buffer.WriteString("   ")
+	buffer.WriteString(PadLeft("↥"+txSpeedStr+"kB/s", ' ', net.maxTxSpeedLen+5))
+	buffer.WriteRune(' ')
 	net.graphTx.Call()
+
+	buffer.WriteString("\", \"color\": \"")
+	if usage > 0.75 {
+		buffer.WriteString(colorCritical)
+	} else if usage > 0.5 {
+		buffer.WriteString(colorBad)
+	} else if usage > 0.25 {
+		buffer.WriteString(colorGood)
+	} else {
+		buffer.WriteString(colorNeutral)
+	}
 	buffer.WriteString("\"}")
 }
